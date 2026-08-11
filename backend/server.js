@@ -1,6 +1,8 @@
 
 const express = require("express");
 const authRoutes = require("./routes/authRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const protect = require("./middleware/authMiddleware");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -10,6 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -17,6 +20,14 @@ app.get("/", (req, res) => {
         success: true,
         message: "Task Manager API is running 🚀"
     });
+});
+
+app.get("/api/auth/protected", protect, (req, res) => {
+  res.json({
+    success: true,
+    message: "You have access to this protected route",
+    userId: req.user.userId,
+  });
 });
 
 // 404 route
