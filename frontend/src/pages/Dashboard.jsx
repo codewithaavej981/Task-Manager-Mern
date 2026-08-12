@@ -1,55 +1,107 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TaskCard from "../components/TaskCard";
 import TaskForm from "../components/TaskForm";
+import Navbar from "../components/Navbar";
+import api from "../api/axios";
 
 function Dashboard() {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Learn React",
-      description: "Practice React components and hooks",
-      completed: false,
-    },
-    {
-      id: 2,
-      title: "Build Task Manager",
-      description: "Create the frontend of the task manager",
-      completed: true,
-    },
-  ]);
-
+  const [tasks, setTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [editingTask, setEditingTask] = useState(null);
 
-  function addTask(task) {
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        ...task,
-        completed: false,
-      },
-    ]);
+  // GET TASKS
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const response = await api.get("/tasks", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        setTasks(response.data.tasks);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    fetchTasks();
+  }, []);
+
+  // CREATE
+  async function addTask(taskData) {
+    try {
+      const response = await api.post("/tasks", taskData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      setTasks((prev) => [response.data.task, ...prev]);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function toggleTask(id) {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
+  // UPDATE
+  async function updateTask(id, updatedData) {
+    try {
+      const response = await api.put(`/tasks/${id}`, updatedData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      setTasks((prev) =>
+        prev.map((task) =>
+          task._id === id ? response.data.task : task
+        )
+      );
+
+      setEditingTask(null);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function deleteTask(id) {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+  // COMPLETE / UNDO
+  async function toggleTask(id) {
+    const task = tasks.find((task) => task._id === id);
+
+    if (!task) return;
+
+    await updateTask(id, {
+      completed: !task.completed,
+    });
   }
 
+  // DELETE
+  async function deleteTask(id) {
+    try {
+      await api.delete(`/tasks/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      setTasks((prev) =>
+        prev.filter((task) => task._id !== id)
+      );
+
+      if (editingTask?._id === id) {
+        setEditingTask(null);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // SEARCH + FILTER
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch = task.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchesSearch =
+      task.title.toLowerCase().includes(search.toLowerCase()) ||
+      task.description.toLowerCase().includes(search.toLowerCase());
 
     const matchesFilter =
       filter === "all" ||
@@ -59,15 +111,17 @@ function Dashboard() {
     return matchesSearch && matchesFilter;
   });
 
+  const completedCount = tasks.filter(
+    (task) => task.completed
+  ).length;
+
+  const pendingCount = tasks.filter(
+    (task) => !task.completed
+  ).length;
+
   return (
     <div className="app">
-      <header className="navbar">
-        <h1>Task Manager</h1>
-
-        <button className="logout-btn">
-          Logout
-        </button>
-      </header>
+      <Navbar />
 
       <main className="dashboard">
         <div className="dashboard-header">
@@ -75,12 +129,18 @@ function Dashboard() {
             <h2>My Tasks</h2>
             <p>Manage your daily tasks</p>
           </div>
-
-          <TaskForm onAddTask={addTask} />
         </div>
+
+        <TaskForm
+          onAddTask={addTask}
+          editingTask={editingTask}
+          onUpdateTask={updateTask}
+          onCancelEdit={() => setEditingTask(null)}
+        />
 
         <div className="task-controls">
           <input
+            className="srh-task"
             type="text"
             placeholder="Search tasks..."
             value={search}
@@ -99,28 +159,23 @@ function Dashboard() {
 
         <div className="task-stats">
           <span>Total: {tasks.length}</span>
-          <span>
-            Completed: {tasks.filter((task) => task.completed).length}
-          </span>
-          <span>
-            Pending: {tasks.filter((task) => !task.completed).length}
-          </span>
+          <span>Completed: {completedCount}</span>
+          <span>Pending: {pendingCount}</span>
         </div>
 
         <div className="task-list">
           {filteredTasks.length > 0 ? (
             filteredTasks.map((task) => (
               <TaskCard
-                key={task.id}
+                key={task._id}
                 task={task}
                 onToggle={toggleTask}
                 onDelete={deleteTask}
+                onEdit={setEditingTask}
               />
             ))
           ) : (
-            <p className="empty">
-              No tasks found.
-            </p>
+            <p className="empty">No tasks found.</p>
           )}
         </div>
       </main>

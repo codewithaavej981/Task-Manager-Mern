@@ -1,4 +1,4 @@
-function TaskCard({ task, onToggle, onDelete }) {
+function TaskCard({ task, onToggle, onDelete, onEdit }) {
   return (
     <div className={`task-card ${task.completed ? "completed" : ""}`}>
       <div>
@@ -11,13 +11,17 @@ function TaskCard({ task, onToggle, onDelete }) {
       </div>
 
       <div className="task-actions">
-        <button onClick={() => onToggle(task.id)}>
+        <button onClick={() => onToggle(task._id)}>
           {task.completed ? "Undo" : "Complete"}
+        </button>
+
+        <button onClick={() => onEdit(task)}>
+          Edit
         </button>
 
         <button
           className="delete-btn"
-          onClick={() => onDelete(task.id)}
+          onClick={() => onDelete(task._id)}
         >
           Delete
         </button>
