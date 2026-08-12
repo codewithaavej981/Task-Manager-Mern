@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 
-function TaskForm({
-  onAddTask,
-  editingTask,
-  onUpdateTask,
-  onCancelEdit,
-}) {
+function TaskForm({ onAddTask, editingTask, onUpdateTask, onCancelEdit }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -30,7 +25,7 @@ function TaskForm({
     };
 
     if (editingTask) {
-      onUpdateTask(editingTask.id, taskData);
+      onUpdateTask(editingTask._id, taskData);
     } else {
       onAddTask(taskData);
     }
@@ -66,9 +61,7 @@ function TaskForm({
         </div>
 
         <div className="form-field">
-          <label htmlFor="task-description">
-            Description
-          </label>
+          <label htmlFor="task-description">Description</label>
 
           <input
             id="task-description"
@@ -81,11 +74,7 @@ function TaskForm({
 
         <div className="form-actions">
           {editingTask && (
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={onCancelEdit}
-            >
+            <button type="button" className="cancel-btn" onClick={onCancelEdit}>
               Cancel
             </button>
           )}

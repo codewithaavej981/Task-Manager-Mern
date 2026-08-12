@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../api/axios";
 import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
@@ -18,23 +19,36 @@ function Register() {
     });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(e) {
+  e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    console.log("Register data:", formData);
-
-    // Temporary navigation
-    navigate("/login");
+  if (formData.password !== formData.confirmPassword) {
+    alert("Passwords do not match");
+    return;
   }
 
+  try {
+    const response = await api.post("/auth/register", {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    alert(response.data.message);
+
+    navigate("/login");
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      error.response?.data?.message || "Registration failed"
+    );
+  }
+}
+
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="register-page">
+      <div className="register-card">
         <div className="auth-header">
           <div className="auth-logo">✓</div>
 
@@ -42,7 +56,7 @@ function Register() {
           <p>Start managing your tasks today</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="register-form">
           <div className="form-field">
             <label>Name</label>
 
@@ -95,7 +109,7 @@ function Register() {
             />
           </div>
 
-          <button className="auth-btn" type="submit">
+          <button className="register-btn" type="submit">
             Create Account
           </button>
         </form>
